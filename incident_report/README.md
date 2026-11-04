@@ -1,16 +1,17 @@
-# incident_report
+# Campus Incident Reporting App
 
-A new Flutter project.
+A cross-platform Flutter application for reporting and managing campus incidents (water, electricity, facility, safety, sanitation, and other) across campus areas like Enterprise Commons, Learning Commons, and Social Commons.
 
-## Getting Started
+## Authentication & Account Roles
 
-This project is a starting point for a Flutter application.
+- **Students**: Only students are allowed to sign up for new accounts. Student email addresses must follow the format: `name@alustudent.com`.
+- **Staff**: Staff accounts are pre-configured or role-assigned. Staff logins use role-based email formats such as:
+  - `facility@alueducation.com`
+  - `security@alueducation.com`
+  - `maintenance@alueducation.com`
+  - `cleaning@alueducation.com`
 
-A few resources to get you started if this is your first Flutter project:
+## Database & Backend
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+- Includes a relational database schema (`database.sql` and SQLite database implementation) for roles, categories, statuses, users, incidents, and staff.
+- Integrated with Firebase authentication and Firestore (configured via `firebase_options.dart` and `.env`).
