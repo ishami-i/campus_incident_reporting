@@ -3,6 +3,7 @@
 import 'package:firebase_core/firebase_core.dart' show FirebaseOptions;
 import 'package:flutter/foundation.dart'
     show defaultTargetPlatform, kIsWeb, TargetPlatform;
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 /// Default [FirebaseOptions] for use with your Firebase apps.
 ///
@@ -41,7 +42,7 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'AIzaSyA9BQanbjBp-0NbZqiSfANS52xs4fjsRq0',
+    apiKey: dotenv.env['firebase_web'],
     appId: '1:99500291299:web:cb4d3c0721aacbe4d041d6',
     messagingSenderId: '99500291299',
     projectId: 'campus-incident-report-ac5a9',
@@ -50,7 +51,7 @@ class DefaultFirebaseOptions {
   );
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyC3-7gQy37ak_4qNEbFKnpZcnfUXlgcPmM',
+    apiKey: dotenv.env['firebase_android'],
     appId: '1:99500291299:android:10f07959caaa67f1d041d6',
     messagingSenderId: '99500291299',
     projectId: 'campus-incident-report-ac5a9',
@@ -58,7 +59,7 @@ class DefaultFirebaseOptions {
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyAnx4nTKwKcVo-mx3LZOqDUAXfErI0dN2U',
+    apiKey: dotenv.env['firebase_ios'],
     appId: '1:99500291299:ios:1026f1812efb3789d041d6',
     messagingSenderId: '99500291299',
     projectId: 'campus-incident-report-ac5a9',
@@ -67,7 +68,7 @@ class DefaultFirebaseOptions {
   );
 
   static const FirebaseOptions macos = FirebaseOptions(
-    apiKey: 'AIzaSyAnx4nTKwKcVo-mx3LZOqDUAXfErI0dN2U',
+    apiKey: dotenv.env['firebase_mac'],
     appId: '1:99500291299:ios:1026f1812efb3789d041d6',
     messagingSenderId: '99500291299',
     projectId: 'campus-incident-report-ac5a9',
@@ -76,7 +77,7 @@ class DefaultFirebaseOptions {
   );
 
   static const FirebaseOptions windows = FirebaseOptions(
-    apiKey: 'AIzaSyA9BQanbjBp-0NbZqiSfANS52xs4fjsRq0',
+    apiKey: dotenv.env['firebase_window'],
     appId: '1:99500291299:web:2e4477810e2941b3d041d6',
     messagingSenderId: '99500291299',
     projectId: 'campus-incident-report-ac5a9',

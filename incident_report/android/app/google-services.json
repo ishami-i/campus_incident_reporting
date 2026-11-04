@@ -15,7 +15,8 @@
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyC3-7gQy37ak_4qNEbFKnpZcnfUXlgcPmM"
+          // use the same as the one in the firebase_options.dart
+          "current_key": "firebase_android",
         }
       ],
       "services": {
