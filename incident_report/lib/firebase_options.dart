@@ -6,15 +6,6 @@ import 'package:flutter/foundation.dart'
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 /// Default [FirebaseOptions] for use with your Firebase apps.
-///
-/// Example:
-/// ```dart
-/// import 'firebase_options.dart';
-/// // ...
-/// await Firebase.initializeApp(
-///   options: DefaultFirebaseOptions.currentPlatform,
-/// );
-/// ```
 class DefaultFirebaseOptions {
   static FirebaseOptions get currentPlatform {
     if (kIsWeb) {
@@ -41,47 +32,47 @@ class DefaultFirebaseOptions {
     }
   }
 
-  static const FirebaseOptions web = FirebaseOptions(
-    apiKey: dotenv.env['firebase_web'],
-    appId: '1:99500291299:web:cb4d3c0721aacbe4d041d6',
-    messagingSenderId: '99500291299',
-    projectId: 'campus-incident-report-ac5a9',
-    authDomain: 'campus-incident-report-ac5a9.firebaseapp.com',
-    storageBucket: 'campus-incident-report-ac5a9.firebasestorage.app',
-  );
+  static FirebaseOptions get web => FirebaseOptions(
+        apiKey: dotenv.env['firebase_web'] ?? 'AIzaSyA9BQanbjBp-0NbZqiSfANS52xs4fjsRq0',
+        appId: '1:99500291299:web:cb4d3c0721aacbe4d041d6',
+        messagingSenderId: '99500291299',
+        projectId: 'campus-incident-report-ac5a9',
+        authDomain: 'campus-incident-report-ac5a9.firebaseapp.com',
+        storageBucket: 'campus-incident-report-ac5a9.firebasestorage.app',
+      );
 
-  static const FirebaseOptions android = FirebaseOptions(
-    apiKey: dotenv.env['firebase_android'],
-    appId: '1:99500291299:android:10f07959caaa67f1d041d6',
-    messagingSenderId: '99500291299',
-    projectId: 'campus-incident-report-ac5a9',
-    storageBucket: 'campus-incident-report-ac5a9.firebasestorage.app',
-  );
+  static FirebaseOptions get android => FirebaseOptions(
+        apiKey: dotenv.env['firebase_android'] ?? 'AIzaSyC3-7gQy37ak_4qNEbFKnpZcnfUXlgcPmM',
+        appId: '1:99500291299:android:10f07959caaa67f1d041d6',
+        messagingSenderId: '99500291299',
+        projectId: 'campus-incident-report-ac5a9',
+        storageBucket: 'campus-incident-report-ac5a9.firebasestorage.app',
+      );
 
-  static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: dotenv.env['firebase_ios'],
-    appId: '1:99500291299:ios:1026f1812efb3789d041d6',
-    messagingSenderId: '99500291299',
-    projectId: 'campus-incident-report-ac5a9',
-    storageBucket: 'campus-incident-report-ac5a9.firebasestorage.app',
-    iosBundleId: 'com.example.incidentReport',
-  );
+  static FirebaseOptions get ios => FirebaseOptions(
+        apiKey: dotenv.env['firebase_ios'] ?? 'AIzaSyAnx4nTKwKcVo-mx3LZOqDUAXfErI0dN2U',
+        appId: '1:99500291299:ios:1026f1812efb3789d041d6',
+        messagingSenderId: '99500291299',
+        projectId: 'campus-incident-report-ac5a9',
+        storageBucket: 'campus-incident-report-ac5a9.firebasestorage.app',
+        iosBundleId: 'com.example.incidentReport',
+      );
 
-  static const FirebaseOptions macos = FirebaseOptions(
-    apiKey: dotenv.env['firebase_mac'],
-    appId: '1:99500291299:ios:1026f1812efb3789d041d6',
-    messagingSenderId: '99500291299',
-    projectId: 'campus-incident-report-ac5a9',
-    storageBucket: 'campus-incident-report-ac5a9.firebasestorage.app',
-    iosBundleId: 'com.example.incidentReport',
-  );
+  static FirebaseOptions get macos => FirebaseOptions(
+        apiKey: dotenv.env['firebase_mac'] ?? 'AIzaSyAnx4nTKwKcVo-mx3LZOqDUAXfErI0dN2U',
+        appId: '1:99500291299:ios:1026f1812efb3789d041d6',
+        messagingSenderId: '99500291299',
+        projectId: 'campus-incident-report-ac5a9',
+        storageBucket: 'campus-incident-report-ac5a9.firebasestorage.app',
+        iosBundleId: 'com.example.incidentReport',
+      );
 
-  static const FirebaseOptions windows = FirebaseOptions(
-    apiKey: dotenv.env['firebase_window'],
-    appId: '1:99500291299:web:2e4477810e2941b3d041d6',
-    messagingSenderId: '99500291299',
-    projectId: 'campus-incident-report-ac5a9',
-    authDomain: 'campus-incident-report-ac5a9.firebaseapp.com',
-    storageBucket: 'campus-incident-report-ac5a9.firebasestorage.app',
-  );
+  static FirebaseOptions get windows => FirebaseOptions(
+        apiKey: dotenv.env['firebase_window'] ?? 'AIzaSyA9BQanbjBp-0NbZqiSfANS52xs4fjsRq0',
+        appId: '1:99500291299:web:2e4477810e2941b3d041d6',
+        messagingSenderId: '99500291299',
+        projectId: 'campus-incident-report-ac5a9',
+        authDomain: 'campus-incident-report-ac5a9.firebaseapp.com',
+        storageBucket: 'campus-incident-report-ac5a9.firebasestorage.app',
+      );
 }

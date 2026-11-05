@@ -5,7 +5,7 @@ extension AppThemeX on ThemeData {
   AppColors get appColors => extension<AppColors>()!;
 }
 
-/// 2. Define the Custom Theme Extension matching your Tailwind/CSS tokens
+/// 2. Define the Custom Theme Extension adhering to the 60:30:10 Color Rule for high contrast and visibility
 class AppColors extends ThemeExtension<AppColors> {
   final Map<int, Color> text;
   final Map<int, Color> background;
@@ -21,37 +21,44 @@ class AppColors extends ThemeExtension<AppColors> {
     required this.accent,
   });
 
-  // Light Theme Color Map
+  // Light Theme Color Map (60% Dominant clean background, 30% Secondary crisp white cards & dark slate text, 10% Accent brand purple)
   static const lightColors = AppColors(
     text: {
-      50: Color(0xFFEFEDF8), 100: Color(0xFFDEDAF1), 200: Color(0xFFBEB6E2),
-      300: Color(0xFF9D91D4), 400: Color(0xFF7D6CC6), 500: Color(0xFF5C47B8),
-      600: Color(0xFF4A3993), 700: Color(0xFF372B6E), 800: Color(0xFF251D49),
-      900: Color(0xFF120E25), 950: Color(0xFF090712),
+      50: Color(0xFFF8FAFC), 100: Color(0xFFF1F5F9), 200: Color(0xFFE2E8F0),
+      300: Color(0xFFCBD5E1), 400: Color(0xFF94A3B8), 500: Color(0xFF64748B),
+      600: Color(0xFF475569), 700: Color(0xFF334155), 800: Color(0xFF1E293B),
+      900: Color(0xFF0F172A), 950: Color(0xFF020617),
     },
     background: {
-      50: Color(0xFFEDEDF8), 100: Color(0xFFDBDBF0), 200: Color(0xFFB6B6E2),
-      300: Color(0xFF9292D3), 400: Color(0xFF6D6DC5), 500: Color(0xFF4949B6),
-      600: Color(0xFF3A3A92), 700: Color(0xFF2C2C6D), 800: Color(0xFF1D1D49),
-      900: Color(0xFF0F0F24), 950: Color(0xFF070712),
+      50: Color(0xFFF8FAFC),  // 60% Dominant Canvas
+      100: Color(0xFFFFFFFF), // 30% Secondary Card Surface
+      200: Color(0xFFF1F5F9),
+      300: Color(0xFFE2E8F0), // Card borders
+      400: Color(0xFFCBD5E1),
+      500: Color(0xFF94A3B8),
+      600: Color(0xFF64748B),
+      700: Color(0xFF334155),
+      800: Color(0xFF1E293B),
+      900: Color(0xFF0F172A),
+      950: Color(0xFF020617),
     },
     primary: {
-      50: Color(0xFFEDEBFA), 100: Color(0xFFDBD7F4), 200: Color(0xFFB7AEEA),
-      300: Color(0xFF9386DF), 400: Color(0xFF705ED4), 500: Color(0xFF4C36C9),
-      600: Color(0xFF3D2BA1), 700: Color(0xFF2D2079), 800: Color(0xFF1E1551),
-      900: Color(0xFF0F0B28), 950: Color(0xFF080514),
+      50: Color(0xFFEEF2FF), 100: Color(0xFFE0E7FF), 200: Color(0xFFC7D2FE),
+      300: Color(0xFFA5B4FC), 400: Color(0xFF818CF8), 500: Color(0xFF4C36C9), // 10% Accent Brand
+      600: Color(0xFF4338CA), 700: Color(0xFF3730A3), 800: Color(0xFF312E81),
+      900: Color(0xFF1E1B4B), 950: Color(0xFF0F172A),
     },
     secondary: {
-      50: Color(0xFFEDEAFA), 100: Color(0xFFDAD5F6), 200: Color(0xFFB5ABED),
-      300: Color(0xFF9082E3), 400: Color(0xFF6B58DA), 500: Color(0xFF462ED1),
-      600: Color(0xFF3825A7), 700: Color(0xFF2A1C7D), 800: Color(0xFF1C1254),
-      900: Color(0xFF0E092A), 950: Color(0xFF070515),
+      50: Color(0xFFF0FDFA), 100: Color(0xFFCCFBF1), 200: Color(0xFF99F6E4),
+      300: Color(0xFF5EEAD4), 400: Color(0xFF2DD4BF), 500: Color(0xFF14B8A6),
+      600: Color(0xFF0D9488), 700: Color(0xFF0F766E), 800: Color(0xFF115E59),
+      900: Color(0xFF134E4A), 950: Color(0xFF042F2E),
     },
     accent: {
-      50: Color(0xFFECE9FB), 100: Color(0xFFD9D3F8), 200: Color(0xFFB3A8F0),
-      300: Color(0xFF8C7CE9), 400: Color(0xFF6651E1), 500: Color(0xFF4025DA),
-      600: Color(0xFF331EAE), 700: Color(0xFF261683), 800: Color(0xFF1A0F57),
-      900: Color(0xFF0D072C), 950: Color(0xFF060416),
+      50: Color(0xFFFAF5FF), 100: Color(0xFFF3E8FF), 200: Color(0xFFE9D5FF),
+      300: Color(0xFFD8B4FE), 400: Color(0xFFC084FC), 500: Color(0xFF4025DA),
+      600: Color(0xFF9333EA), 700: Color(0xFF7E22CE), 800: Color(0xFF6B21A8),
+      900: Color(0xFF581C87), 950: Color(0xFF3B0764),
     },
   );
 

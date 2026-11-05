@@ -13,7 +13,7 @@ class ReportSummaryStudent extends StatelessWidget {
       decoration: BoxDecoration(
         color: colors.background[100],
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: colors.background[300]),
+        border: Border.all(color: colors.background[300]!),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

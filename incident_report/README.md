@@ -1,6 +1,6 @@
 # Campus Incident Reporting App
 
-A cross-platform Flutter application for reporting and managing campus incidents (water, electricity, facility, safety, sanitation, and other) across campus areas like Enterprise Commons, Learning Commons, and Social Commons.
+A cross-platformFlutter application for reporting and managing campus incidents (water, electricity, facility, safety, sanitation, and other) across campus areas like Enterprise Commons, Learning Commons, and Social Commons.
 
 ## Authentication & Account Roles
 
@@ -10,6 +10,18 @@ A cross-platform Flutter application for reporting and managing campus incidents
   - `security@alueducation.com`
   - `maintenance@alueducation.com`
   - `cleaning@alueducation.com`
+
+## Default Staff Passwords (Before Changing)
+
+| Staff Role / Email | Default Initial Password |
+|---|---|
+- `facility@alueducation.com` | `StaffFacility123!` |
+- `security@alueducation.com` | `StaffSecurity123!` |
+- `maintenance@alueducation.com` | `StaffMaintenance123!` |
+- `cleaning@alueducation.com` | `StaffCleaning123!` |
+- `operations@alueducation.com` | `StaffOperations123!` |
+
+*Note: Staff and students can change their passwords via the Profile -> Change Password screen.*
 
 ## Database & Backend
 

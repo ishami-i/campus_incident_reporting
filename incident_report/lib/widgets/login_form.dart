@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:incident_report/themes/app_theme.dart';
 import 'package:incident_report/validators/form_validator.dart';
+import 'package:incident_report/logic/user_management.dart';
 import 'package:incident_report/screens/home_screen.dart';
+import 'package:incident_report/screens/staff_dashboard_screen.dart';
 import 'package:incident_report/screens/signup_screen.dart';
 
 class LoginForm extends StatefulWidget {
@@ -41,14 +43,6 @@ class _LoginFormState extends State<LoginForm> {
                 fontSize: 26,
                 fontWeight: FontWeight.bold,
                 color: colors.text[950],
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Sign in with your student (@alustudent.com) or staff email (e.g. facility@alueducation.com).',
-              style: TextStyle(
-                fontSize: 13,
-                color: colors.text[700],
               ),
             ),
             const SizedBox(height: 24),
@@ -101,16 +95,33 @@ class _LoginFormState extends State<LoginForm> {
               ),
               onPressed: () {
                 if (_formKey.currentState!.validate()) {
+                  final email = _emailController.text.trim().toLowerCase();
+                  final profile = UserManagement.getUserProfileFromEmail(email);
+                  final namePart = email.split('@')[0];
+                  final displayName = namePart[0].toUpperCase() + namePart.substring(1);
+
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Logged in successfully!'),
+                    SnackBar(
+                      content: Text('Logged in successfully as ${profile.role.name.toUpperCase()}!'),
                       backgroundColor: Colors.green,
                     ),
                   );
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(builder: (context) => const HomeScreen()),
-                  );
+
+                  if (profile.isStaff) {
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => StaffDashboardScreen(staffEmail: email),
+                      ),
+                    );
+                  } else {
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => HomeScreen(userName: displayName, userEmail: email),
+                      ),
+                    );
+                  }
                 }
               },
               child: const Text(
@@ -128,7 +139,7 @@ class _LoginFormState extends State<LoginForm> {
                   );
                 },
                 child: Text(
-                  'Don\'t have an account? Sign up (Students only)',
+                  'Don\'t have an account? Sign up',
                   style: TextStyle(color: colors.primary[600], fontWeight: FontWeight.w600),
                 ),
               ),

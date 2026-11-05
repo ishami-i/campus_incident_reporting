@@ -116,6 +116,8 @@ class _SignupFormState extends State<SignupForm> {
               ),
               onPressed: () {
                 if (_formKey.currentState!.validate()) {
+                  final name = _nameController.text.trim();
+                  final email = _emailController.text.trim();
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
                       content: Text('Student account created successfully!'),
@@ -124,7 +126,9 @@ class _SignupFormState extends State<SignupForm> {
                   );
                   Navigator.pushReplacement(
                     context,
-                    MaterialPageRoute(builder: (context) => const HomeScreen()),
+                    MaterialPageRoute(
+                      builder: (context) => HomeScreen(userName: name, userEmail: email),
+                    ),
                   );
                 }
               },

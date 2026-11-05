@@ -108,8 +108,8 @@ class _ReportingFormState extends State<ReportingForm> {
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
                         color: isSelected
-                            ? colors.primary[700]
-                            : colors.background[300],
+                            ? colors.primary[700]!
+                            : colors.background[300]!,
                       ),
                     ),
                     padding: const EdgeInsets.symmetric(horizontal: 8),
@@ -265,7 +265,7 @@ class _ReportingFormState extends State<ReportingForm> {
                 );
               },
               icon: const Icon(Icons.add_a_photo),
-              label: Text(_imagePath == null ? 'Add Photo' : 'Photo Attached'),
+              label: Text(_imagePath == null ? 'AddPhoto' : 'Photo Attached'),
               style: OutlinedButton.styleFrom(
                 minimumSize: const Size(double.infinity, 48),
                 shape: RoundedRectangleBorder(

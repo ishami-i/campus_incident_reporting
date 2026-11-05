@@ -6,9 +6,17 @@ import 'package:incident_report/widgets/recent_reports.dart';
 import 'package:incident_report/screens/reporting_screen.dart';
 import 'package:incident_report/screens/incidents_screen.dart';
 import 'package:incident_report/screens/profile_screen.dart';
+import 'package:incident_report/screens/settings_screen.dart';
 
 class HomeScreen extends StatelessWidget {
-  const HomeScreen({super.key});
+  final String userName;
+  final String userEmail;
+
+  const HomeScreen({
+    super.key,
+    this.userName = 'Alex',
+    this.userEmail = 'alex.johnson@alustudent.com',
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -51,11 +59,19 @@ class HomeScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 10),
                   Text(
-                    'Campus User',
+                    userName,
                     style: TextStyle(
                       color: colors.text[50],
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    userEmail,
+                    style: TextStyle(
+                      color: colors.text[50]!.withOpacity(0.8),
+                      fontSize: 12,
                     ),
                   ),
                 ],
@@ -91,7 +107,13 @@ class HomeScreen extends StatelessWidget {
             ListTile(
               leading: const Icon(Icons.settings),
               title: const Text('Settings'),
-              onTap: () => Navigator.pop(context),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const SettingsScreen()),
+                );
+              },
             ),
           ],
         ),
@@ -100,12 +122,12 @@ class HomeScreen extends StatelessWidget {
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          children: const [
-            WelcomeWidget(userName: 'Alex'),
-            SizedBox(height: 20),
-            ReportSummaryStudent(),
-            SizedBox(height: 20),
-            RecentReports(),
+          children: [
+            WelcomeWidget(userName: userName),
+            const SizedBox(height: 20),
+            const ReportSummaryStudent(),
+            const SizedBox(height: 20),
+            const RecentReports(),
           ],
         ),
       ),

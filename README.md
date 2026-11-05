@@ -11,6 +11,18 @@ A cross-platform Flutter application for reporting and managing campus incidents
   - `maintenance@alueducation.com`
   - `cleaning@alueducation.com`
 
+## Default Staff Passwords (Before Changing)
+
+| Staff Role / Email | Default Initial Password |
+|---|---|
+| `facility@alueducation.com` | `StaffFacility123!` |
+| `security@alueducation.com` | `StaffSecurity123!` |
+| `maintenance@alueducation.com` | `StaffMaintenance123!` |
+| `cleaning@alueducation.com` | `StaffCleaning123!` |
+| `operations@alueducation.com` | `StaffOperations123!` |
+
+*Note: Staff and students can change their passwords via the Profile -> Change Password screen.*
+
 ## Database & Backend
 
 - Includes a relational database schema (`database.sql` and SQLite database implementation) for roles, categories, statuses, users, incidents, and staff.
