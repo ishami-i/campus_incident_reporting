@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:incident_report/themes/app_theme.dart';
 import 'package:incident_report/validators/form_validator.dart';
+import 'package:incident_report/logic/auth_service.dart';
 
 class PasswordChangeForm extends StatefulWidget {
   final bool isStaff;
@@ -17,6 +18,7 @@ class _PasswordChangeFormState extends State<PasswordChangeForm> {
   final _confirmPasswordController = TextEditingController();
   bool _obscureCurrent = true;
   bool _obscureNew = true;
+  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -24,6 +26,35 @@ class _PasswordChangeFormState extends State<PasswordChangeForm> {
     _newPasswordController.dispose();
     _confirmPasswordController.dispose();
     super.dispose();
+  }
+
+  Future<void> _submit() async {
+    if (!_formKey.currentState!.validate()) return;
+    final messenger = ScaffoldMessenger.of(context);
+    final navigator = Navigator.of(context);
+
+    setState(() => _isLoading = true);
+    try {
+      await AuthService.changePassword(
+        currentPassword: _currentPasswordController.text,
+        newPassword: _newPasswordController.text,
+      );
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text('Password changed successfully!'),
+          backgroundColor: Colors.green,
+        ),
+      );
+      navigator.pop();
+    } catch (e) {
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(AuthService.friendlyError(e)),
+          backgroundColor: Colors.red,
+        ),
+      );
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
   @override
@@ -57,7 +88,11 @@ class _PasswordChangeFormState extends State<PasswordChangeForm> {
             TextFormField(
               controller: _currentPasswordController,
               obscureText: _obscureCurrent,
-              validator: FormValidator.validatePassword,
+              validator: (val) {
+                final err = FormValidator.validatePassword(val);
+                if (err != null) return err;
+                return null;
+              },
               decoration: InputDecoration(
                 labelText: 'Current Password',
                 prefixIcon: const Icon(Icons.lock_outline),
@@ -80,7 +115,14 @@ class _PasswordChangeFormState extends State<PasswordChangeForm> {
             TextFormField(
               controller: _newPasswordController,
               obscureText: _obscureNew,
-              validator: FormValidator.validatePassword,
+              validator: (val) {
+                final err = FormValidator.validatePassword(val);
+                if (err != null) return err;
+                if (val == _currentPasswordController.text) {
+                  return 'New password must be different from current password';
+                }
+                return null;
+              },
               decoration: InputDecoration(
                 labelText: 'New Password',
                 prefixIcon: const Icon(Icons.lock),
@@ -132,21 +174,13 @@ class _PasswordChangeFormState extends State<PasswordChangeForm> {
                   borderRadius: BorderRadius.circular(12),
                 ),
               ),
-              onPressed: () {
-                if (_formKey.currentState!.validate()) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Password changed successfully!'),
-                      backgroundColor: Colors.green,
+              onPressed: _isLoading ? null : _submit,
+              child: _isLoading
+                  ? const CircularProgressIndicator(color: Colors.white)
+                  : const Text(
+                      'Update Password',
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                     ),
-                  );
-                  Navigator.pop(context);
-                }
-              },
-              child: const Text(
-                'Update Password',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-              ),
             ),
           ],
         ),

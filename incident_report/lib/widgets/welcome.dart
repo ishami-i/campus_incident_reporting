@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:incident_report/themes/app_theme.dart';
+import 'package:incident_report/logic/user_management.dart';
 import 'package:incident_report/screens/profile_screen.dart';
+import 'package:incident_report/widgets/incident_widgets.dart';
 
 class WelcomeWidget extends StatelessWidget {
-  final String userName;
-  const WelcomeWidget({super.key, this.userName = 'Student'});
+  final UserProfile profile;
+  const WelcomeWidget({super.key, required this.profile});
 
   @override
   Widget build(BuildContext context) {
@@ -18,7 +20,7 @@ class WelcomeWidget extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Big Hello, $userName!',
+                'Big Hello, ${profile.name}!',
                 style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
@@ -28,10 +30,7 @@ class WelcomeWidget extends StatelessWidget {
               const SizedBox(height: 4),
               Text(
                 'Work together to make our university great.',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: colors.text[700],
-                ),
+                style: TextStyle(fontSize: 14, color: colors.text[700]),
               ),
             ],
           ),
@@ -43,14 +42,7 @@ class WelcomeWidget extends StatelessWidget {
               MaterialPageRoute(builder: (context) => const ProfileScreen()),
             );
           },
-          child: CircleAvatar(
-            radius: 24,
-            backgroundColor: colors.primary[500],
-            child: Icon(
-              Icons.person,
-              color: colors.text[50],
-            ),
-          ),
+          child: ProfileAvatar(photoUrl: profile.photoUrl, radius: 24),
         ),
       ],
     );

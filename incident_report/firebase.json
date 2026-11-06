@@ -1,1 +1,45 @@
-{"flutter":{"platforms":{"android":{"default":{"projectId":"campus-incident-report-ac5a9","appId":"1:99500291299:android:10f07959caaa67f1d041d6","fileOutput":"android/app/google-services.json"}},"ios":{"default":{"projectId":"campus-incident-report-ac5a9","appId":"1:99500291299:ios:1026f1812efb3789d041d6","uploadDebugSymbols":false,"fileOutput":"ios/Runner/GoogleService-Info.plist"}},"macos":{"default":{"projectId":"campus-incident-report-ac5a9","appId":"1:99500291299:ios:1026f1812efb3789d041d6","uploadDebugSymbols":false,"fileOutput":"macos/Runner/GoogleService-Info.plist"}},"dart":{"lib/firebase_options.dart":{"projectId":"campus-incident-report-ac5a9","configurations":{"android":"1:99500291299:android:10f07959caaa67f1d041d6","ios":"1:99500291299:ios:1026f1812efb3789d041d6","macos":"1:99500291299:ios:1026f1812efb3789d041d6","web":"1:99500291299:web:cb4d3c0721aacbe4d041d6","windows":"1:99500291299:web:2e4477810e2941b3d041d6"}}}}}}
+{
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "campus-incident-report-ac5a9",
+          "appId": "1:99500291299:android:10f07959caaa67f1d041d6",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "ios": {
+        "default": {
+          "projectId": "campus-incident-report-ac5a9",
+          "appId": "1:99500291299:ios:1026f1812efb3789d041d6",
+          "uploadDebugSymbols": false,
+          "fileOutput": "ios/Runner/GoogleService-Info.plist"
+        }
+      },
+      "macos": {
+        "default": {
+          "projectId": "campus-incident-report-ac5a9",
+          "appId": "1:99500291299:ios:1026f1812efb3789d041d6",
+          "uploadDebugSymbols": false,
+          "fileOutput": "macos/Runner/GoogleService-Info.plist"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "campus-incident-report-ac5a9",
+          "configurations": {
+            "android": "1:99500291299:android:10f07959caaa67f1d041d6",
+            "ios": "1:99500291299:ios:1026f1812efb3789d041d6",
+            "macos": "1:99500291299:ios:1026f1812efb3789d041d6",
+            "web": "1:99500291299:web:cb4d3c0721aacbe4d041d6",
+            "windows": "1:99500291299:web:2e4477810e2941b3d041d6"
+          }
+        }
+      }
+    }
+  },
+  "firestore": {
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
+  }
+}

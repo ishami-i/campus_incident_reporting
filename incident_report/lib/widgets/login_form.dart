@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:incident_report/themes/app_theme.dart';
 import 'package:incident_report/validators/form_validator.dart';
-import 'package:incident_report/logic/user_management.dart';
-import 'package:incident_report/screens/home_screen.dart';
-import 'package:incident_report/screens/staff_dashboard_screen.dart';
+import 'package:incident_report/logic/auth_service.dart';
 import 'package:incident_report/screens/signup_screen.dart';
 
 class LoginForm extends StatefulWidget {
@@ -18,12 +16,61 @@ class _LoginFormState extends State<LoginForm> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
+  bool _isLoading = false;
 
   @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
+  }
+
+  void _toast(String message, {bool error = false}) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            Icon(error ? Icons.error_outline : Icons.check_circle_outline, color: Colors.white),
+            const SizedBox(width: 8),
+            Expanded(child: Text(message)),
+          ],
+        ),
+        backgroundColor: error ? Colors.red.shade800 : Colors.green.shade700,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  Future<void> _submit() async {
+    if (!_formKey.currentState!.validate()) {
+      _toast('Please enter a valid email address and password.', error: true);
+      return;
+    }
+    setState(() => _isLoading = true);
+    try {
+      await AuthService.signIn(
+        email: _emailController.text.trim().toLowerCase(),
+        password: _passwordController.text,
+      );
+    } catch (e) {
+      _toast(AuthService.friendlyError(e), error: true);
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _forgotPassword() async {
+    final error = FormValidator.validateEmail(_emailController.text, isSignup: false);
+    if (error != null) {
+      _toast('Enter your email above first: $error', error: true);
+      return;
+    }
+    try {
+      await AuthService.sendPasswordReset(_emailController.text.trim().toLowerCase());
+      _toast('If that account exists, a reset link is on its way.');
+    } catch (e) {
+      _toast(AuthService.friendlyError(e), error: true);
+    }
   }
 
   @override
@@ -48,6 +95,7 @@ class _LoginFormState extends State<LoginForm> {
             const SizedBox(height: 24),
             TextFormField(
               controller: _emailController,
+              autovalidateMode: AutovalidateMode.onUserInteraction,
               keyboardType: TextInputType.emailAddress,
               validator: (val) => FormValidator.validateEmail(val, isSignup: false),
               decoration: InputDecoration(
@@ -63,6 +111,7 @@ class _LoginFormState extends State<LoginForm> {
             const SizedBox(height: 16),
             TextFormField(
               controller: _passwordController,
+              autovalidateMode: AutovalidateMode.onUserInteraction,
               obscureText: _obscurePassword,
               validator: FormValidator.validatePassword,
               decoration: InputDecoration(
@@ -93,43 +142,24 @@ class _LoginFormState extends State<LoginForm> {
                   borderRadius: BorderRadius.circular(12),
                 ),
               ),
-              onPressed: () {
-                if (_formKey.currentState!.validate()) {
-                  final email = _emailController.text.trim().toLowerCase();
-                  final profile = UserManagement.getUserProfileFromEmail(email);
-                  final namePart = email.split('@')[0];
-                  final displayName = namePart[0].toUpperCase() + namePart.substring(1);
-
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Logged in successfully as ${profile.role.name.toUpperCase()}!'),
-                      backgroundColor: Colors.green,
+              onPressed: _isLoading ? null : _submit,
+              child: _isLoading
+                  ? const CircularProgressIndicator(color: Colors.white)
+                  : const Text(
+                      'Log In',
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                     ),
-                  );
-
-                  if (profile.isStaff) {
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => StaffDashboardScreen(staffEmail: email),
-                      ),
-                    );
-                  } else {
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => HomeScreen(userName: displayName, userEmail: email),
-                      ),
-                    );
-                  }
-                }
-              },
-              child: const Text(
-                'Log In',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            Center(
+              child: TextButton(
+                onPressed: _forgotPassword,
+                child: Text(
+                  'Forgot password?',
+                  style: TextStyle(color: colors.primary[600]),
+                ),
               ),
             ),
-            const SizedBox(height: 16),
             Center(
               child: TextButton(
                 onPressed: () {

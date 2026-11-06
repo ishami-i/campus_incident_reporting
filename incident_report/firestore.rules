@@ -1,0 +1,127 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ---------- helpers ----------
+    function signedIn() { return request.auth != null; }
+    function myEmail() { return request.auth.token.email.lower(); }
+    function hasProfile() {
+      return signedIn() &&
+        exists(/databases/$(database)/documents/users/$(request.auth.uid));
+    }
+    function myDoc() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+    function isStaff()   { return hasProfile() && myDoc().role == 'staff'; }
+    function isStudent() { return hasProfile() && myDoc().role == 'student'; }
+    function myPosition() { return myDoc().staffPosition; }
+
+    function isOpeninaryImage(img) {
+      return img == null || (
+        img is map &&
+        img.keys().hasOnly(['path', 'url']) &&
+        img.path is string && img.url is string &&
+        img.url.matches('https://cdn[.]openinary[.]dev/b/42a4c7a2-1798-4ac2-9028-571a59ab6a93/t/.+')
+      );
+    }
+
+    // ---------- users ----------
+    match /users/{uid} {
+      allow read: if signedIn() && (request.auth.uid == uid || isStaff());
+
+      // Self-signup is for students only. Staff docs are created by an admin
+      // (Firebase console or Admin SDK), never from the client.
+      allow create: if signedIn() && request.auth.uid == uid
+        && myEmail().matches('.*@alustudent[.]com')
+        && request.resource.data.keys().hasOnly(
+             ['email', 'name', 'role', 'staffPosition', 'photo', 'createdAt', 'updatedAt'])
+        && request.resource.data.role == 'student'
+        && request.resource.data.staffPosition == null
+        && request.resource.data.email == myEmail()
+        && request.resource.data.name is string
+        && request.resource.data.name.size() > 0 && request.resource.data.name.size() <= 80
+        && isOpeninaryImage(request.resource.data.photo)
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time;
+
+      // Users can never change their own role, position, or email.
+      allow update: if signedIn() && request.auth.uid == uid
+        && request.resource.data.diff(resource.data).affectedKeys()
+             .hasOnly(['name', 'photo', 'updatedAt'])
+        && request.resource.data.name is string
+        && request.resource.data.name.size() > 0 && request.resource.data.name.size() <= 80
+        && isOpeninaryImage(request.resource.data.photo)
+        && request.resource.data.updatedAt == request.time;
+
+      allow delete: if false;
+    }
+
+    // ---------- incidents ----------
+    match /incidents/{incidentId} {
+
+      allow read: if signedIn() && (
+        resource.data.reporterUid == request.auth.uid ||
+        (isStaff() && myPosition() in resource.data.visibleTo)
+      );
+
+      allow create: if isStudent()
+        && request.resource.data.keys().hasOnly([
+             'title', 'description', 'category', 'status', 'location',
+             'reporterUid', 'reporterEmail', 'image', 'visibleTo', 'handledBy',
+             'lastNote', 'createdAt', 'updatedAt'])
+        && request.resource.data.reporterUid == request.auth.uid
+        && request.resource.data.reporterEmail == myEmail()
+        && request.resource.data.status == 'submitted'
+        && request.resource.data.category in
+             ['water', 'electricity', 'facility', 'safety', 'sanitation', 'other']
+        && request.resource.data.title is string
+        && request.resource.data.title.size() > 0 && request.resource.data.title.size() <= 120
+        && request.resource.data.description is string
+        && request.resource.data.description.size() > 0
+        && request.resource.data.description.size() <= 2000
+        && request.resource.data.location is map
+        && request.resource.data.location.keys().hasOnly(['area', 'detail'])
+        && request.resource.data.location.detail is string
+        && request.resource.data.location.detail.size() > 0
+        && request.resource.data.location.detail.size() <= 120
+        && isOpeninaryImage(request.resource.data.image)
+        && request.resource.data.visibleTo is list
+        && request.resource.data.handledBy is list
+        && request.resource.data.lastNote == null
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time;
+
+      // Only staff routed to this incident may change its status.
+      allow update: if isStaff() && myPosition() in resource.data.handledBy
+        && request.resource.data.diff(resource.data).affectedKeys()
+             .hasOnly(['status', 'lastNote', 'updatedAt'])
+        && request.resource.data.status in ['in progress', 'resolved', 'closed']
+        && request.resource.data.updatedAt == request.time;
+
+      allow delete: if false;
+
+      // ---------- status history (append-only audit trail) ----------
+      match /updates/{updateId} {
+        function parent() {
+          return get(/databases/$(database)/documents/incidents/$(incidentId)).data;
+        }
+
+        allow read: if signedIn() && (
+          parent().reporterUid == request.auth.uid ||
+          (isStaff() && myPosition() in parent().visibleTo)
+        );
+
+        allow create: if isStaff() && myPosition() in parent().handledBy
+          && request.resource.data.keys().hasOnly(
+               ['fromStatus', 'toStatus', 'note', 'byUid', 'byEmail', 'at'])
+          && request.resource.data.byUid == request.auth.uid
+          && request.resource.data.byEmail == myEmail()
+          && request.resource.data.fromStatus == parent().status
+          && request.resource.data.toStatus in ['in progress', 'resolved', 'closed']
+          && request.resource.data.at == request.time;
+
+        allow update, delete: if false;
+      }
+    }
+  }
+}

@@ -41,3 +41,11 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Secrets (copy .env.example to .env)
+.env
+tools/node_modules/
+tools/*serviceAccount*.json
+
+# Backups made by apply_update.sh
+.update_backup_*/

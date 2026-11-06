@@ -1,79 +1,84 @@
+import 'package:incident_report/logic/incident_rules.dart';
+
 enum UserRole { student, staff }
 
-enum StaffPosition { maintenance, security, cleaning, campusOperations, nurse, other }
+enum StaffPosition {
+  maintenance,
+  security,
+  cleaning,
+  campusOperations,
+  nurse,
+  other,
+}
+
+extension StaffPositionX on StaffPosition {
+  String get label {
+    switch (this) {
+      case StaffPosition.maintenance:
+        return 'Maintenance';
+      case StaffPosition.security:
+        return 'Security';
+      case StaffPosition.cleaning:
+        return 'Cleaning';
+      case StaffPosition.campusOperations:
+        return 'Campus Operations';
+      case StaffPosition.nurse:
+        return 'Nurse';
+      case StaffPosition.other:
+        return 'Staff';
+    }
+  }
+}
 
 class UserProfile {
+  final String uid;
   final String email;
   final String name;
   final UserRole role;
   final StaffPosition? staffPosition;
+  final String? photoUrl;
 
-  UserProfile({
+  const UserProfile({
+    required this.uid,
     required this.email,
     required this.name,
     required this.role,
     this.staffPosition,
+    this.photoUrl,
   });
 
   bool get isStudent => role == UserRole.student;
   bool get isStaff => role == UserRole.staff;
+
+  /// Builds a profile from a `users/{uid}` Firestore document.
+  /// Role and position come from the database, never from the email address.
+  factory UserProfile.fromMap(String uid, Map<String, dynamic> m) {
+    final role = m['role'] == 'staff' ? UserRole.staff : UserRole.student;
+    StaffPosition? position;
+    if (role == UserRole.staff) {
+      position = StaffPosition.values.firstWhere(
+        (p) => p.name == m['staffPosition'],
+        orElse: () => StaffPosition.other,
+      );
+    }
+    final photo = m['photo'];
+    return UserProfile(
+      uid: uid,
+      email: (m['email'] as String?) ?? '',
+      name: (m['name'] as String?) ?? 'User',
+      role: role,
+      staffPosition: position,
+      photoUrl: photo is Map ? photo['url'] as String? : null,
+    );
+  }
 }
 
 class UserManagement {
-  /// Determines user role and staff position from email address
-  static UserProfile getUserProfileFromEmail(String email, {String name = 'User'}) {
-    final normalizedEmail = email.trim().toLowerCase();
-
-    if (normalizedEmail.endsWith('@alustudent.com')) {
-      return UserProfile(
-        email: normalizedEmail,
-        name: name,
-        role: UserRole.student,
-      );
-    } else if (normalizedEmail.endsWith('@alueducation.com')) {
-      StaffPosition position = StaffPosition.other;
-      if (normalizedEmail.startsWith('facility') || normalizedEmail.startsWith('maintenance')) {
-        position = StaffPosition.maintenance;
-      } else if (normalizedEmail.startsWith('security')) {
-        position = StaffPosition.security;
-      } else if (normalizedEmail.startsWith('cleaning') || normalizedEmail.startsWith('sanitation')) {
-        position = StaffPosition.cleaning;
-      } else if (normalizedEmail.startsWith('operations') || normalizedEmail.startsWith('campus')) {
-        position = StaffPosition.campusOperations;
-      } else if (normalizedEmail.startsWith('nurse') || normalizedEmail.startsWith('medical')) {
-        position = StaffPosition.nurse;
-      }
-
-      return UserProfile(
-        email: normalizedEmail,
-        name: name,
-        role: UserRole.staff,
-        staffPosition: position,
-      );
-    } else {
-      return UserProfile(
-        email: normalizedEmail,
-        name: name,
-        role: UserRole.student,
-      );
-    }
-  }
-
-  /// Check if user has permission to perform actions (e.g. change status)
-  static bool canChangeStatus(UserProfile profile, String incidentCategory) {
-    if (profile.isStudent) return false;
-    if (profile.isStaff) {
-      if (profile.staffPosition == StaffPosition.campusOperations) return true;
-      if (profile.staffPosition == StaffPosition.maintenance) {
-        return ['water', 'electricity', 'facility', 'other'].contains(incidentCategory.toLowerCase());
-      }
-      if (profile.staffPosition == StaffPosition.security) {
-        return incidentCategory.toLowerCase() == 'safety';
-      }
-      if (profile.staffPosition == StaffPosition.cleaning) {
-        return incidentCategory.toLowerCase() == 'sanitation';
-      }
-    }
-    return false;
+  /// Whether this user may change the status of an incident in [category].
+  /// Mirrors the `handledBy` rule enforced by firestore.rules.
+  static bool canChangeStatus(UserProfile profile, String category) {
+    if (!profile.isStaff || profile.staffPosition == null) return false;
+    return IncidentRouting.handledBy(category.toLowerCase())
+        .contains(profile.staffPosition!.name);
   }
 }

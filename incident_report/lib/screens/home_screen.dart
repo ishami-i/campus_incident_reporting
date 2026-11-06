@@ -1,5 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:incident_report/themes/app_theme.dart';
+import 'package:incident_report/logic/auth_service.dart';
+import 'package:incident_report/logic/firestore_service.dart';
+import 'package:incident_report/logic/incident_model.dart';
+import 'package:incident_report/logic/user_management.dart';
+import 'package:incident_report/widgets/incident_widgets.dart';
 import 'package:incident_report/widgets/welcome.dart';
 import 'package:incident_report/widgets/report_summary_student.dart';
 import 'package:incident_report/widgets/recent_reports.dart';
@@ -9,14 +14,12 @@ import 'package:incident_report/screens/profile_screen.dart';
 import 'package:incident_report/screens/settings_screen.dart';
 
 class HomeScreen extends StatelessWidget {
-  final String userName;
-  final String userEmail;
+  final UserProfile profile;
 
-  const HomeScreen({
-    super.key,
-    this.userName = 'Alex',
-    this.userEmail = 'alex.johnson@alustudent.com',
-  });
+  const HomeScreen({super.key, required this.profile});
+
+  int _count(List<IncidentModel> list, String status) =>
+      list.where((i) => i.status == status).length;
 
   @override
   Widget build(BuildContext context) {
@@ -33,6 +36,7 @@ class HomeScreen extends StatelessWidget {
         actions: [
           IconButton(
             icon: const Icon(Icons.person),
+            tooltip: 'Profile',
             onPressed: () {
               Navigator.push(
                 context,
@@ -52,14 +56,10 @@ class HomeScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  const CircleAvatar(
-                    radius: 30,
-                    backgroundColor: Colors.white,
-                    child: Icon(Icons.person, size: 35),
-                  ),
+                  ProfileAvatar(photoUrl: profile.photoUrl, radius: 30),
                   const SizedBox(height: 10),
                   Text(
-                    userName,
+                    profile.name,
                     style: TextStyle(
                       color: colors.text[50],
                       fontSize: 16,
@@ -68,7 +68,7 @@ class HomeScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    userEmail,
+                    profile.email,
                     style: TextStyle(
                       color: colors.text[50]!.withOpacity(0.8),
                       fontSize: 12,
@@ -84,7 +84,7 @@ class HomeScreen extends StatelessWidget {
             ),
             ListTile(
               leading: const Icon(Icons.list_alt),
-              title: const Text('All Reports'),
+              title: const Text('My Reports'),
               onTap: () {
                 Navigator.pop(context);
                 Navigator.push(
@@ -115,21 +115,51 @@ class HomeScreen extends StatelessWidget {
                 );
               },
             ),
+            const Divider(),
+            ListTile(
+              leading: const Icon(Icons.logout),
+              title: const Text('Log out'),
+              onTap: () async {
+                Navigator.pop(context);
+                await AuthService.signOut();
+              },
+            ),
           ],
         ),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            WelcomeWidget(userName: userName),
-            const SizedBox(height: 20),
-            const ReportSummaryStudent(),
-            const SizedBox(height: 20),
-            const RecentReports(),
-          ],
-        ),
+      body: StreamBuilder(
+        stream: FirestoreService.myIncidentsStream(),
+        builder: (context, snapshot) {
+          if (snapshot.hasError) return ErrorNotice(error: snapshot.error!);
+
+          final loading = !snapshot.hasData;
+          final incidents = (snapshot.data?.docs ?? [])
+              .map(IncidentModel.fromDoc)
+              .toList();
+
+          return SingleChildScrollView(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                WelcomeWidget(profile: profile),
+                const SizedBox(height: 20),
+                ReportSummaryStudent(
+                  totalCount: incidents.length,
+                  submittedCount: _count(incidents, 'submitted'),
+                  inProgressCount: _count(incidents, 'in progress'),
+                  resolvedCount: _count(incidents, 'resolved'),
+                ),
+                const SizedBox(height: 20),
+                if (loading)
+                  const LoadingBox()
+                else
+                  RecentReports(reports: incidents.take(5).toList()),
+                const SizedBox(height: 80), // room for the floating button
+              ],
+            ),
+          );
+        },
       ),
       floatingActionButton: FloatingActionButton.extended(
         backgroundColor: colors.accent[500],

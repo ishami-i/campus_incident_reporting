@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:incident_report/themes/app_theme.dart';
 import 'package:incident_report/validators/form_validator.dart';
-import 'package:incident_report/screens/home_screen.dart';
+import 'package:incident_report/logic/auth_service.dart';
 
 class SignupForm extends StatefulWidget {
   const SignupForm({super.key});
@@ -16,6 +16,7 @@ class _SignupFormState extends State<SignupForm> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
+  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -23,6 +24,45 @@ class _SignupFormState extends State<SignupForm> {
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
+  }
+
+  Future<void> _submit() async {
+    if (!_formKey.currentState!.validate()) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please correct the errors in the form before submitting.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+    final messenger = ScaffoldMessenger.of(context);
+    final navigator = Navigator.of(context);
+
+    setState(() => _isLoading = true);
+    try {
+      await AuthService.signUp(
+        email: _emailController.text.trim().toLowerCase(),
+        password: _passwordController.text,
+        name: _nameController.text.trim(),
+      );
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text('Student account created successfully!'),
+          backgroundColor: Colors.green,
+        ),
+      );
+      // The auth gate shows the home screen; close the sign-up screen.
+      navigator.popUntil((route) => route.isFirst);
+    } catch (e) {
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(AuthService.friendlyError(e)),
+          backgroundColor: Colors.red,
+        ),
+      );
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
   @override
@@ -55,7 +95,8 @@ class _SignupFormState extends State<SignupForm> {
             const SizedBox(height: 24),
             TextFormField(
               controller: _nameController,
-              validator: (val) => FormValidator.validateRequired(val, 'full name'),
+              autovalidateMode: AutovalidateMode.onUserInteraction,
+              validator: FormValidator.validateName,
               decoration: InputDecoration(
                 labelText: 'Full Name',
                 prefixIcon: const Icon(Icons.person),
@@ -69,6 +110,7 @@ class _SignupFormState extends State<SignupForm> {
             const SizedBox(height: 16),
             TextFormField(
               controller: _emailController,
+              autovalidateMode: AutovalidateMode.onUserInteraction,
               keyboardType: TextInputType.emailAddress,
               validator: (val) => FormValidator.validateEmail(val, isSignup: true),
               decoration: InputDecoration(
@@ -84,6 +126,7 @@ class _SignupFormState extends State<SignupForm> {
             const SizedBox(height: 16),
             TextFormField(
               controller: _passwordController,
+              autovalidateMode: AutovalidateMode.onUserInteraction,
               obscureText: _obscurePassword,
               validator: FormValidator.validatePassword,
               decoration: InputDecoration(
@@ -114,28 +157,13 @@ class _SignupFormState extends State<SignupForm> {
                   borderRadius: BorderRadius.circular(12),
                 ),
               ),
-              onPressed: () {
-                if (_formKey.currentState!.validate()) {
-                  final name = _nameController.text.trim();
-                  final email = _emailController.text.trim();
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Student account created successfully!'),
-                      backgroundColor: Colors.green,
+              onPressed: _isLoading ? null : _submit,
+              child: _isLoading
+                  ? const CircularProgressIndicator(color: Colors.white)
+                  : const Text(
+                      'Sign Up',
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                     ),
-                  );
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => HomeScreen(userName: name, userEmail: email),
-                    ),
-                  );
-                }
-              },
-              child: const Text(
-                'Sign Up',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-              ),
             ),
           ],
         ),

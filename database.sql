@@ -40,3 +40,4 @@ CREATE TABLE staff (
     position VARCHAR(100) NOT NULL CHECK (position IN ('maintenance', 'security', 'cleaning', 'campus operations', 'nurse', 'other')),
     FOREIGN KEY (email) REFERENCES `user`(email)
 );
+-- openinary_key = 'oik_sFjKykWxIIRKckzVlcZspcKmmXEwaRvGiKHktHVpgynSyVeaqhiTCQvMCyXMPWLf'

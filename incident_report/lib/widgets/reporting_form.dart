@@ -1,5 +1,12 @@
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:incident_report/themes/app_theme.dart';
+import 'package:incident_report/logic/auth_service.dart';
+import 'package:incident_report/logic/firestore_service.dart';
+import 'package:incident_report/logic/incident_rules.dart';
+import 'package:incident_report/logic/openinary_service.dart';
+import 'package:incident_report/widgets/incident_widgets.dart';
 
 class ReportingForm extends StatefulWidget {
   final Function(Map<String, dynamic> reportData)? onSubmit;
@@ -14,43 +21,17 @@ class _ReportingFormState extends State<ReportingForm> {
   final _formKey = GlobalKey<FormState>();
 
   String? _selectedCategory;
-  final List<String> _categories = [
-    'water',
-    'electricity',
-    'facility',
-    'safety',
-    'sanitation',
-    'other'
-  ];
-
-  String? _selectedBuilding = 'Enterprise commons';
-  final List<String> _buildings = [
-    'Enterprise commons',
-    'Learning commons',
-    'Social commons'
-  ];
+  String? _selectedBuilding = IncidentConst.buildings.first;
 
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
   final _locationDetailController = TextEditingController();
-  String? _imagePath;
 
-  IconData _getCategoryIcon(String category) {
-    switch (category) {
-      case 'water':
-        return Icons.water_drop;
-      case 'electricity':
-        return Icons.electric_bolt;
-      case 'facility':
-        return Icons.business;
-      case 'safety':
-        return Icons.security;
-      case 'sanitation':
-        return Icons.cleaning_services;
-      default:
-        return Icons.category;
-    }
-  }
+  // The picked photo is kept in memory and uploaded to Openinary on submit.
+  Uint8List? _imageBytes;
+  String? _imageName;
+  bool _isPickingImage = false;
+  bool _isSubmitting = false;
 
   @override
   void dispose() {
@@ -60,9 +41,122 @@ class _ReportingFormState extends State<ReportingForm> {
     super.dispose();
   }
 
+  void _toast(String message, {bool error = false}) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: error ? Colors.red : Colors.green,
+      ),
+    );
+  }
+
+  Future<void> _pickImage() async {
+    try {
+      setState(() => _isPickingImage = true);
+
+      final picked = await ImagePicker().pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 1280,
+        maxHeight: 1280,
+        imageQuality: 85,
+      );
+
+      if (picked != null) {
+        final bytes = await picked.readAsBytes();
+        setState(() {
+          _imageBytes = bytes;
+          _imageName = picked.name;
+        });
+        _toast('Photo attached. It uploads when you submit.');
+      }
+    } catch (e) {
+      _toast('Error picking image: $e', error: true);
+    } finally {
+      if (mounted) setState(() => _isPickingImage = false);
+    }
+  }
+
+  Future<void> _submit() async {
+    if (_selectedCategory == null) {
+      _toast('Please select a category', error: true);
+      return;
+    }
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() => _isSubmitting = true);
+    try {
+      // 1. Upload the photo (if any) to Openinary.
+      Map<String, String>? image;
+      if (_imageBytes != null) {
+        final uploaded = await OpeninaryService.uploadImage(
+          bytes: _imageBytes!,
+          fileName: _imageName ?? 'photo.jpg',
+        );
+        image = uploaded.toMap();
+      }
+
+      // 2. Save the incident (with the image reference) to Firestore.
+      final title = _titleController.text.trim();
+      final description = _descriptionController.text.trim();
+      final detail = _locationDetailController.text.trim();
+      final id = await FirestoreService.createIncident(
+        title: title,
+        description: description,
+        category: _selectedCategory!,
+        area: _selectedBuilding!,
+        detail: detail,
+        image: image,
+      );
+
+      final reportData = {
+        'id': id,
+        'title': title,
+        'description': description,
+        'category': _selectedCategory,
+        'location': '$_selectedBuilding - $detail',
+        'image_url': image?['url'],
+      };
+
+      if (!mounted) return;
+      if (widget.onSubmit != null) {
+        widget.onSubmit!(reportData);
+      } else {
+        Navigator.pop(context, reportData);
+      }
+    } on OpeninaryException catch (e) {
+      _toast('Photo upload failed: ${e.message}. Remove the photo or try again.',
+          error: true);
+    } catch (e) {
+      _toast('Could not submit report: ${AuthService.friendlyError(e)}',
+          error: true);
+    } finally {
+      if (mounted) setState(() => _isSubmitting = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).appColors;
+
+    InputDecoration fieldDecoration(String label, {bool hint = false}) {
+      return InputDecoration(
+        labelText: label,
+        alignLabelWithHint: hint,
+        filled: true,
+        fillColor: colors.background[100],
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+      );
+    }
+
+    Widget heading(String text) => Text(
+          text,
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: colors.text[950],
+          ),
+        );
 
     return Form(
       key: _formKey,
@@ -71,14 +165,7 @@ class _ReportingFormState extends State<ReportingForm> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Select Category',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: colors.text[950],
-              ),
-            ),
+            heading('Select Category'),
             const SizedBox(height: 12),
             GridView.builder(
               shrinkWrap: true,
@@ -89,16 +176,14 @@ class _ReportingFormState extends State<ReportingForm> {
                 mainAxisSpacing: 10,
                 childAspectRatio: 2.2,
               ),
-              itemCount: _categories.length,
+              itemCount: IncidentConst.categories.length,
               itemBuilder: (context, index) {
-                final cat = _categories[index];
+                final cat = IncidentConst.categories[index];
                 final isSelected = _selectedCategory == cat;
                 return InkWell(
-                  onTap: () {
-                    setState(() {
-                      _selectedCategory = cat;
-                    });
-                  },
+                  onTap: _isSubmitting
+                      ? null
+                      : () => setState(() => _selectedCategory = cat),
                   borderRadius: BorderRadius.circular(12),
                   child: Container(
                     decoration: BoxDecoration(
@@ -117,7 +202,7 @@ class _ReportingFormState extends State<ReportingForm> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Icon(
-                          _getCategoryIcon(cat),
+                          categoryIcon(cat),
                           size: 20,
                           color: isSelected ? colors.text[50] : colors.primary[600],
                         ),
@@ -142,174 +227,120 @@ class _ReportingFormState extends State<ReportingForm> {
             if (_selectedCategory == null)
               Padding(
                 padding: const EdgeInsets.only(top: 8.0, left: 4.0),
-                child: Text(
-                  'Please select a category',
-                  style: TextStyle(color: Colors.red[700], fontSize: 12),
-                ),
+                child: Text('Please select a category',
+                    style: TextStyle(color: Colors.red[700], fontSize: 12)),
               ),
             const SizedBox(height: 24),
-            Text(
-              'Incident Details',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: colors.text[950],
-              ),
-            ),
+            heading('Incident Details'),
             const SizedBox(height: 12),
             TextFormField(
               controller: _titleController,
-              validator: (value) {
-                if (value == null || value.trim().isEmpty) {
-                  return 'Please enter a title';
-                }
-                return null;
-              },
-              decoration: InputDecoration(
-                labelText: 'Title',
-                filled: true,
-                fillColor: colors.background[100],
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
+              enabled: !_isSubmitting,
+              maxLength: 120,
+              autovalidateMode: AutovalidateMode.onUserInteraction,
+              validator: (value) => (value == null || value.trim().isEmpty)
+                  ? 'Please enter a title'
+                  : null,
+              decoration: fieldDecoration('Title'),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 8),
             TextFormField(
               controller: _descriptionController,
+              enabled: !_isSubmitting,
               maxLines: 4,
-              validator: (value) {
-                if (value == null || value.trim().isEmpty) {
-                  return 'Please enter a description';
-                }
-                return null;
-              },
-              decoration: InputDecoration(
-                labelText: 'Description',
-                alignLabelWithHint: true,
-                filled: true,
-                fillColor: colors.background[100],
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
+              maxLength: 2000,
+              autovalidateMode: AutovalidateMode.onUserInteraction,
+              validator: (value) => (value == null || value.trim().isEmpty)
+                  ? 'Please enter a description'
+                  : null,
+              decoration: fieldDecoration('Description', hint: true),
             ),
-            const SizedBox(height: 24),
-            Text(
-              'Location',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: colors.text[950],
-              ),
-            ),
+            const SizedBox(height: 16),
+            heading('Location'),
             const SizedBox(height: 12),
             DropdownButtonFormField<String>(
               value: _selectedBuilding,
               dropdownColor: colors.background[50],
-              decoration: InputDecoration(
-                labelText: 'Campus Area',
-                filled: true,
-                fillColor: colors.background[100],
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              items: _buildings.map((building) {
-                return DropdownMenuItem(
-                  value: building,
-                  child: Text(building),
-                );
-              }).toList(),
-              onChanged: (val) {
-                setState(() {
-                  _selectedBuilding = val;
-                });
-              },
+              decoration: fieldDecoration('Campus Area'),
+              items: IncidentConst.buildings
+                  .map((b) => DropdownMenuItem(value: b, child: Text(b)))
+                  .toList(),
+              onChanged: _isSubmitting
+                  ? null
+                  : (val) => setState(() => _selectedBuilding = val),
             ),
             const SizedBox(height: 16),
             TextFormField(
               controller: _locationDetailController,
-              validator: (value) {
-                if (value == null || value.trim().isEmpty) {
-                  return 'Please specify room, class, or place name';
-                }
-                return null;
-              },
-              decoration: InputDecoration(
-                labelText: 'Room, Class, or Specific Place Name',
-                filled: true,
-                fillColor: colors.background[100],
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
+              enabled: !_isSubmitting,
+              maxLength: 120,
+              autovalidateMode: AutovalidateMode.onUserInteraction,
+              validator: (value) => (value == null || value.trim().isEmpty)
+                  ? 'Please specify room, class, or place name'
+                  : null,
+              decoration: fieldDecoration('Room, Class, or Specific Place Name'),
             ),
-            const SizedBox(height: 24),
-            Text(
-              'Attachment (Optional)',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: colors.text[950],
-              ),
-            ),
+            const SizedBox(height: 16),
+            heading('Attach Incident Image (Optional)'),
             const SizedBox(height: 12),
             OutlinedButton.icon(
-              onPressed: () {
-                setState(() {
-                  _imagePath = 'sample_image_path.jpg';
-                });
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Image attached successfully')),
-                );
-              },
-              icon: const Icon(Icons.add_a_photo),
-              label: Text(_imagePath == null ? 'AddPhoto' : 'Photo Attached'),
+              onPressed: (_isPickingImage || _isSubmitting) ? null : _pickImage,
+              icon: _isPickingImage
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2))
+                  : const Icon(Icons.add_a_photo),
+              label: Text(_isPickingImage
+                  ? 'Opening Gallery...'
+                  : _imageBytes == null
+                      ? 'Select Photo from Gallery'
+                      : 'Change Attached Photo'),
               style: OutlinedButton.styleFrom(
                 minimumSize: const Size(double.infinity, 48),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
+                    borderRadius: BorderRadius.circular(12)),
               ),
             ),
-            const SizedBox(height: 32),
+            if (_imageBytes != null) ...[
+              const SizedBox(height: 12),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: Image.memory(
+                  _imageBytes!,
+                  height: 180,
+                  width: double.infinity,
+                  fit: BoxFit.cover,
+                ),
+              ),
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton.icon(
+                  onPressed: _isSubmitting
+                      ? null
+                      : () => setState(() {
+                            _imageBytes = null;
+                            _imageName = null;
+                          }),
+                  icon: const Icon(Icons.close),
+                  label: const Text('Remove photo'),
+                ),
+              ),
+            ],
+            const SizedBox(height: 24),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
                 backgroundColor: colors.primary[500],
                 foregroundColor: colors.text[50],
                 minimumSize: const Size(double.infinity, 50),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
+                    borderRadius: BorderRadius.circular(12)),
               ),
-              onPressed: () {
-                if (_selectedCategory == null) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Please select a category')),
-                  );
-                  return;
-                }
-                if (_formKey.currentState!.validate()) {
-                  final reportData = {
-                    'title': _titleController.text.trim(),
-                    'description': _descriptionController.text.trim(),
-                    'category': _selectedCategory,
-                    'location': '$_selectedBuilding - ${_locationDetailController.text.trim()}',
-                    'image_url': _imagePath,
-                    'created_at': DateTime.now().toIso8601String(),
-                  };
-                  if (widget.onSubmit != null) {
-                    widget.onSubmit!(reportData);
-                  } else {
-                    Navigator.pop(context, reportData);
-                  }
-                }
-              },
-              child: const Text(
-                'Submit Incident Report',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-              ),
+              onPressed: _isSubmitting ? null : _submit,
+              child: _isSubmitting
+                  ? const CircularProgressIndicator(color: Colors.white)
+                  : const Text('Submit Incident Report',
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
             ),
           ],
         ),

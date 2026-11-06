@@ -1,67 +1,46 @@
 import 'package:flutter/material.dart';
 import 'package:incident_report/themes/app_theme.dart';
+import 'package:incident_report/logic/incident_model.dart';
+import 'package:incident_report/logic/user_management.dart';
 import 'package:incident_report/widgets/status_changing_form.dart';
 
 class StatusChangingScreen extends StatelessWidget {
-  final String incidentId;
-  final String currentStatus;
-  final String incidentCategory;
-  final String staffPosition; // e.g. maintenance, security, cleaning, etc.
+  final IncidentModel incident;
+  final UserProfile profile;
 
   const StatusChangingScreen({
     super.key,
-    required this.incidentId,
-    required this.currentStatus,
-    required this.incidentCategory,
-    required this.staffPosition,
+    required this.incident,
+    required this.profile,
   });
-
-  bool get _canModifyStatus {
-    final normalizedCategory = incidentCategory.toLowerCase();
-    final normalizedPosition = staffPosition.toLowerCase();
-
-    // Staff see tasks in their category, and 'other' category goes to facility/maintenance
-    if (normalizedPosition == 'maintenance' || normalizedPosition == 'facility') {
-      return ['water', 'electricity', 'facility', 'other'].contains(normalizedCategory);
-    } else if (normalizedPosition == 'security') {
-      return normalizedCategory == 'safety';
-    } else if (normalizedPosition == 'cleaning') {
-      return normalizedCategory == 'sanitation';
-    } else if (normalizedPosition == 'campus operations' || normalizedPosition == 'nurse') {
-      return true;
-    }
-    return true;
-  }
 
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).appColors;
+    final allowed = UserManagement.canChangeStatus(profile, incident.category);
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          'Manage Incident Status',
-          style: TextStyle(color: colors.text[950]),
-        ),
+        title: Text('Manage Incident Status',
+            style: TextStyle(color: colors.text[950])),
         backgroundColor: colors.primary[500],
       ),
       body: Center(
         child: Padding(
           padding: const EdgeInsets.all(16.0),
-          child: _canModifyStatus
-              ? Card(
-                  color: colors.background[100],
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: StatusChangingForm(
-                      incidentId: incidentId,
-                      currentStatus: currentStatus,
-                      onStatusChanged: (newStatus, reasoning) {
-                        // Handle backend status update & optional reasoning logging
-                      },
+          child: allowed
+              ? SingleChildScrollView(
+                  child: Card(
+                    color: colors.background[100],
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16)),
+                    child: Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: StatusChangingForm(
+                        incidentId: incident.id,
+                        incidentLabel: '#${incident.shortId}',
+                        currentStatus: incident.status,
+                      ),
                     ),
                   ),
                 )
@@ -80,7 +59,8 @@ class StatusChangingScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Your staff position ($staffPosition) does not match category "$incidentCategory". Note: Category "other" is routed to Facility/Maintenance.',
+                      'Your position (${profile.staffPosition?.label ?? 'Staff'}) '
+                      'cannot change incidents in the "${incident.category}" category.',
                       textAlign: TextAlign.center,
                       style: TextStyle(color: colors.text[700]),
                     ),
